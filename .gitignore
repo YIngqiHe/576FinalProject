@@ -1,3 +1,5 @@
+.gitignore
+
 *.class
 *.mp4
 *.wav
