@@ -1,91 +1,42 @@
 package org.wikijava.sound.playWave;
 
-import java.awt.*;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
-import javax.swing.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import java.awt.Dimension;
+import java.awt.Color;
+import javax.swing.ImageIcon;
 
 public class PlayVideo {
-    private String rgbFileName;
-    public static final int width = 480; // width of the video frames
-    public static final int height = 270; // height of the video frames
-    private int fps = 30; // frames per second of the video
-    private int numFrames = 8682; // number of frames in the video
-    private JFrame frame;
-    private JLabel videoOutLabel;
-    private RandomAccessFile raf = null;
-    private AtomicBoolean pauseSignal;
-    private AtomicBoolean stopSignal;
-    private AtomicBoolean videoStartSignal;
-
-    private int startingFrameID = 0;
-    private long startingOffset = 0;
-
-    public BufferedImage image;
-    public PlayVideo(AtomicBoolean videoStartSignal, AtomicBoolean pauseSignal, AtomicBoolean stopSignal, String rgbFileName, JFrame parentFrame, JLabel videoOutLabel) throws FileNotFoundException {
-        this.rgbFileName = rgbFileName;
-        this.pauseSignal = pauseSignal;
-        this.stopSignal = stopSignal;
-        this.videoStartSignal = videoStartSignal;
-        this.videoOutLabel = videoOutLabel;
+    public void play() {
+        // File file = new File("C://Users/love3/Desktop/csci576/project/Ready_Player_One_rgb/Ready_Player_One_rgb/InputVideo.rgb");
+        File file = new File("./InputVideo.rgb"); // name of the RGB video file
+        int width = 480; // width of the video frames
+        int height = 270; // height of the video frames
+        int fps = 30; // frames per second of the video
+        int numFrames = 8682; // number of frames in the video
 
         // create the JFrame and JLabel to display the video
-        frame = parentFrame;
+        JFrame frame = new JFrame("Video Display");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(new Dimension(width*2, height*2));
+        frame.setSize(new Dimension(width, height));
         frame.setVisible(true);
-        videoOutLabel.setPreferredSize(new Dimension(width, height));
-        videoOutLabel.setBounds(width,0, width - 10, height - 10);
-        frame.add(videoOutLabel);
-        seek(0);
-    }
+        JLabel label = new JLabel();
+        label.setPreferredSize(new Dimension(width, height));
+        frame.add(label);
 
-    public JFrame getVideoDisplayFrame() {
-        return frame;
-    }
-
-    public void seek(double momentSeconds) throws FileNotFoundException {
-        File file = new File(rgbFileName); // name of the RGB video file
-        raf = new RandomAccessFile(file, "r");
-        int bytesPerFrame = width * height * 3;
-        startingFrameID = (int) (momentSeconds * fps);
-        startingOffset = (long) bytesPerFrame * startingFrameID;
-    }
-
-    public void play() {
-        System.out.println("Start playing video");
         // read the video file and display each frame
-        if (stopSignal.get()) {
-            System.out.println("video stop signal is set, quit");
-            return;
-        }
         try {
-            raf.seek(startingOffset);
-
+            RandomAccessFile raf = new RandomAccessFile(file, "r");
             FileChannel channel = raf.getChannel();
             ByteBuffer buffer = ByteBuffer.allocate(width * height * 3);
-
-            for (int i = startingFrameID; i < numFrames; i++) {
-                if (!videoStartSignal.get()) {
-                    videoStartSignal.set(true);
-                }
-                while (pauseSignal.get()) {
-                    // busy wait if pauseSignal set to true
-                    if (stopSignal.get()) {
-                        break;
-                    }
-                }
-                if (stopSignal.get()) {
-                    System.out.println("video stop signal is set in loop, quit");
-                    break;
-                }
+            for (int i = 0; i < numFrames; i++) {
                 buffer.clear();
                 channel.read(buffer);
                 buffer.rewind();
@@ -99,7 +50,7 @@ public class PlayVideo {
                         image.setRGB(x, y, rgb);
                     }
                 }
-                videoOutLabel.setIcon(new ImageIcon(image));
+                label.setIcon(new ImageIcon(image));
                 frame.validate();
                 frame.repaint();
                 try {
@@ -109,19 +60,10 @@ public class PlayVideo {
                     e.printStackTrace();
                 }
             }
-
             channel.close();
             raf.close();
-            videoStartSignal.set(false);
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void stop() throws IOException {
-        if (raf != null) {
-            raf.close();
-        }
-        raf = null;
     }
 }
