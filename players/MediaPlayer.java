@@ -5,6 +5,7 @@ import org.wikijava.sound.playWave.PlayVideo;
 import org.wikijava.sound.playWave.PlayWaveException;
 
 import java.io.FileNotFoundException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MediaPlayer {
 
@@ -18,15 +19,20 @@ public class MediaPlayer {
   private PlayVideoThread videoThread;
   private PlaySoundThread soundThread;
 
-  private Object syncSignal = new Object();
+  private Object syncSignal;
+  private AtomicBoolean pauseSignal;
+  private AtomicBoolean stopSignal;
 
 
   public MediaPlayer(String videoFilePath, String audioFilePath) throws FileNotFoundException, PlayWaveException {
     this.videoFilePath = videoFilePath;
     this.audioFilePath = audioFilePath;
+    this.pauseSignal = new AtomicBoolean(false);
 
-    videoPlayer = new PlayVideo(videoFilePath);
-    soundPlayer = new PlaySound(audioFilePath);
+    syncSignal = new Object();
+
+    videoPlayer = new PlayVideo(syncSignal, pauseSignal, stopSignal, videoFilePath);
+    soundPlayer = new PlaySound(syncSignal, pauseSignal, stopSignal, audioFilePath);
 
     videoThread = new PlayVideoThread(syncSignal, videoPlayer);
     soundThread = new PlaySoundThread(syncSignal, soundPlayer);
@@ -39,4 +45,18 @@ public class MediaPlayer {
     videoThread.join();
     soundThread.join();
   }
+
+
+  public void pause() {
+    pauseSignal.set(true);
+  }
+
+  public void resume() {
+    pauseSignal.set(false);
+  }
+
+  public void seek() {
+
+  }
+
 }

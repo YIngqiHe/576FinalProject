@@ -18,9 +18,6 @@ public class PlaySoundThread extends Thread{
   public void run() {
     // plays the sound
     try {
-      synchronized (syncSignal) {
-        syncSignal.notify();
-      }
       soundPlayer.play();
     } catch (PlayWaveException e) {
       e.printStackTrace();

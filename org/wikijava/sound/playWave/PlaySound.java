@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -34,11 +35,22 @@ public class PlaySound {
 
   private SourceDataLine dataLine;
 
+  private Object syncSignal;
+
+  private AtomicBoolean pauseSignal;
+  private AtomicBoolean stopSignal;
+
+  private boolean isStarted = false;
+
   /**
    * CONSTRUCTOR
    */
-  public PlaySound(String audioFilePath) throws PlayWaveException {
+  public PlaySound(Object syncSignal, AtomicBoolean pauseSignal, AtomicBoolean stopSignal, String audioFilePath) throws PlayWaveException {
     this.audioFilePath = audioFilePath;
+    this.syncSignal = syncSignal;
+    this.pauseSignal = pauseSignal;
+    this.stopSignal = stopSignal;
+
     FileInputStream inputStream;
     try {
       this.waveStream = new FileInputStream(this.audioFilePath);
@@ -76,15 +88,43 @@ public class PlaySound {
     }
   }
 
+  public void pause() {
+    System.out.println("Audio is paused");
+    dataLine.stop();
+  }
+
   public void play() throws PlayWaveException {
     // Starts the music :P
+
+    if (!isStarted) {
+      synchronized (syncSignal) {
+        try {
+          System.out.println("Wait for video");
+          syncSignal.wait();
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    }
+
+    isStarted = true;
     dataLine.start();
+
 
     int readBytes = 0;
     byte[] audioBuffer = new byte[this.EXTERNAL_BUFFER_SIZE];
 
     try {
       while (readBytes != -1) {
+        while (pauseSignal.get()) {
+          // busy wait if pauseSignal set to true
+          if (stopSignal.get()) {
+            break;
+          }
+        }
+        if (stopSignal.get()) {
+          break;
+        }
         readBytes = audioInputStream.read(audioBuffer, 0,
             audioBuffer.length);
         if (readBytes >= 0) {

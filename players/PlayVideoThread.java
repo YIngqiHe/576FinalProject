@@ -16,13 +16,6 @@ public class PlayVideoThread extends Thread{
   @Override
   public void run() {
     // plays the video
-    synchronized (syncSignal) {
-      try {
-        syncSignal.wait();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
     videoPlayer.play();
   }
 }
