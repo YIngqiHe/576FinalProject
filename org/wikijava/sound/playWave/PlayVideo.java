@@ -23,7 +23,7 @@ public class PlayVideo {
     private int numFrames = 8682; // number of frames in the video
     private JFrame frame;
     private JLabel label;
-    private RandomAccessFile raf;
+    private RandomAccessFile raf = null;
     private Object syncSignal;
     private AtomicBoolean pauseSignal;
     private AtomicBoolean stopSignal;
@@ -38,8 +38,6 @@ public class PlayVideo {
         this.pauseSignal = pauseSignal;
         this.stopSignal = stopSignal;
 
-        File file = new File(rgbFileName); // name of the RGB video file
-
         // create the JFrame and JLabel to display the video
         frame = new JFrame("Video Display");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -48,11 +46,17 @@ public class PlayVideo {
         label = new JLabel();
         label.setPreferredSize(new Dimension(width, height));
         frame.add(label);
-        raf = new RandomAccessFile(file, "r");
+
+        seek(0);
     }
 
+    public JFrame getVideoDisplayFrame() {
+        return frame;
+    }
 
-    public void seek(double momentSeconds) {
+    public void seek(double momentSeconds) throws FileNotFoundException {
+        File file = new File(rgbFileName); // name of the RGB video file
+        raf = new RandomAccessFile(file, "r");
         int bytesPerFrame = width * height * 3;
         startingFrameID = (int) (momentSeconds * fps);
         startingOffset = (long) bytesPerFrame * startingFrameID;
@@ -114,5 +118,12 @@ public class PlayVideo {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void stop() throws IOException {
+        if (raf != null) {
+            raf.close();
+        }
+        raf = null;
     }
 }

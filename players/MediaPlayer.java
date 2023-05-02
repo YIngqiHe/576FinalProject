@@ -43,23 +43,21 @@ public class MediaPlayer {
   public void play() throws InterruptedException {
     videoThread.start();
     soundThread.start();
-
-    videoThread.join();
-    soundThread.join();
   }
 
-  public void seek(double momentSeconds) throws InterruptedException {
+  public void seek(double momentSeconds) throws InterruptedException, IOException, PlayWaveException, LineUnavailableException {
     // stop the play before seek
-    stopSignal.set(true);
-    videoThread.join();
-    soundThread.join();
-
+    stop();
+    soundPlayer.seek(momentSeconds);
     videoPlayer.seek(momentSeconds);
+    play();
 
   }
 
-  public void stop() {
+  public void stop() throws InterruptedException {
     stopSignal.set(true);
+    videoThread.join();
+    soundThread.join();
   }
 
   public void pause() {

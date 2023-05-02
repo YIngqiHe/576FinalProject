@@ -34,7 +34,7 @@ public class PlaySound {
 
   private Info info;
 
-  private SourceDataLine dataLine;
+  private SourceDataLine dataLine = null;
 
   private Object syncSignal;
 
@@ -90,6 +90,14 @@ public class PlaySound {
 
     // Skip the data until the desired position
     audioInputStream.skip(bytePosition);
+  }
+
+  public void stop() {
+    if (dataLine != null && dataLine.isActive()) {
+      // plays what's left and and closes the audioChannel
+      dataLine.drain();
+      dataLine.close();
+    }
   }
 
   public void pause() {
