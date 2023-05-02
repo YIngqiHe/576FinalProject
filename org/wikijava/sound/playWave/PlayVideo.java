@@ -60,6 +60,9 @@ public class PlayVideo {
 
     public void play() {
         // read the video file and display each frame
+        if (stopSignal.get()) {
+            return;
+        }
         try {
             raf.seek(startingOffset);
 

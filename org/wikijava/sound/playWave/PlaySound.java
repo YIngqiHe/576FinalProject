@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -41,17 +42,21 @@ public class PlaySound {
   private AtomicBoolean stopSignal;
 
   private boolean isStarted = false;
+  private boolean isStopped = false;
 
   /**
    * CONSTRUCTOR
    */
-  public PlaySound(Object syncSignal, AtomicBoolean pauseSignal, AtomicBoolean stopSignal, String audioFilePath) throws PlayWaveException {
+  public PlaySound(Object syncSignal, AtomicBoolean pauseSignal, AtomicBoolean stopSignal, String audioFilePath) throws PlayWaveException, LineUnavailableException, IOException, InterruptedException {
     this.audioFilePath = audioFilePath;
     this.syncSignal = syncSignal;
     this.pauseSignal = pauseSignal;
     this.stopSignal = stopSignal;
 
-    FileInputStream inputStream;
+    seek(0);
+  }
+
+  public void seek(double momentSeconds) throws PlayWaveException, LineUnavailableException, IOException, InterruptedException {
     try {
       this.waveStream = new FileInputStream(this.audioFilePath);
     } catch (FileNotFoundException e) {
@@ -78,14 +83,13 @@ public class PlaySound {
     System.out.println("The Audio Info: ");
     System.out.println(info);
 
-    // opens the audio channel
-    dataLine = null;
-    try {
-      dataLine = (SourceDataLine) AudioSystem.getLine(info);
-      dataLine.open(audioFormat, this.EXTERNAL_BUFFER_SIZE);
-    } catch (LineUnavailableException e1) {
-      throw new PlayWaveException(e1);
-    }
+    dataLine = (SourceDataLine) AudioSystem.getLine(info);
+    dataLine.open(audioFormat);
+
+    long bytePosition = (long) (momentSeconds * audioFormat.getFrameRate() * audioFormat.getFrameSize());
+
+    // Skip the data until the desired position
+    audioInputStream.skip(bytePosition);
   }
 
   public void pause() {
@@ -95,7 +99,9 @@ public class PlaySound {
 
   public void play() throws PlayWaveException {
     // Starts the music :P
-
+    if (stopSignal.get()) {
+      return;
+    }
     if (!isStarted) {
       synchronized (syncSignal) {
         try {
@@ -118,12 +124,20 @@ public class PlaySound {
       while (readBytes != -1) {
         while (pauseSignal.get()) {
           // busy wait if pauseSignal set to true
+          if (!isStopped) {
+            isStopped = true;
+            dataLine.stop();
+          }
           if (stopSignal.get()) {
             break;
           }
         }
         if (stopSignal.get()) {
           break;
+        }
+        if (isStopped) {
+          isStopped = false;
+          dataLine.start();
         }
         readBytes = audioInputStream.read(audioBuffer, 0,
             audioBuffer.length);

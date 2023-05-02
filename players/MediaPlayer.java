@@ -4,7 +4,9 @@ import org.wikijava.sound.playWave.PlaySound;
 import org.wikijava.sound.playWave.PlayVideo;
 import org.wikijava.sound.playWave.PlayWaveException;
 
+import javax.sound.sampled.LineUnavailableException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MediaPlayer {
@@ -24,7 +26,7 @@ public class MediaPlayer {
   private AtomicBoolean stopSignal;
 
 
-  public MediaPlayer(String videoFilePath, String audioFilePath) throws FileNotFoundException, PlayWaveException {
+  public MediaPlayer(String videoFilePath, String audioFilePath) throws IOException, PlayWaveException, LineUnavailableException, InterruptedException {
     this.videoFilePath = videoFilePath;
     this.audioFilePath = audioFilePath;
     this.pauseSignal = new AtomicBoolean(false);
@@ -46,6 +48,19 @@ public class MediaPlayer {
     soundThread.join();
   }
 
+  public void seek(double momentSeconds) throws InterruptedException {
+    // stop the play before seek
+    stopSignal.set(true);
+    videoThread.join();
+    soundThread.join();
+
+    videoPlayer.seek(momentSeconds);
+
+  }
+
+  public void stop() {
+    stopSignal.set(true);
+  }
 
   public void pause() {
     pauseSignal.set(true);
