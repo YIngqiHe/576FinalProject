@@ -166,7 +166,33 @@ public class ShotDetector {
     }
 
 
-    public boolean isSameScene(Mat frame1, Mat frame2, double threshold) {
+    public double getHistResult(Mat frame1, Mat frame2) {
+
+        Mat hsvLastFrame = new Mat();
+        Mat hsvCurrentFrame = new Mat();
+        Imgproc.cvtColor(frame1, hsvLastFrame, Imgproc.COLOR_BGR2HSV);
+        Imgproc.cvtColor(frame2, hsvCurrentFrame, Imgproc.COLOR_BGR2HSV);
+
+
+        MatOfInt histSize = new MatOfInt(50, 60);
+        MatOfFloat histRanges = new MatOfFloat(0f, 180f, 0f, 256f);
+        Mat mask = new Mat();
+
+        MatOfInt channels = new MatOfInt(0, 1);
+        Mat hist1 = new Mat();
+        Mat hist2 = new Mat();
+ 
+        Imgproc.calcHist(Arrays.asList(hsvLastFrame), channels, mask, hist1, histSize, histRanges, false);
+        Imgproc.calcHist(Arrays.asList(hsvCurrentFrame), channels, mask, hist2, histSize, histRanges, false);
+
+        Core.normalize(hist1, hist1, 0, 1, Core.NORM_MINMAX);
+        Core.normalize(hist2, hist2, 0, 1, Core.NORM_MINMAX);
+
+        double result= Imgproc.compareHist(hist1, hist2, Imgproc.CV_COMP_CHISQR);
+        return result;
+    }
+
+    public boolean isSameShot(Mat frame1, Mat frame2, double threshold) {
         Mat previousGray = new Mat();
         Imgproc.cvtColor(frame1, previousGray, Imgproc.COLOR_BGR2GRAY);
         Mat currentGray = new Mat();
@@ -239,13 +265,6 @@ public class ShotDetector {
 
         Mat currentFrame = previousFrame.clone();
 
-
-        Mat flow = new Mat();
-
-
-        Size windowSize = new Size(15, 15);
-        TermCriteria termCriteria = new TermCriteria(TermCriteria.MAX_ITER + TermCriteria.EPS, 20, 0.03);
-
         int frameIndex = 0;
 
         ArrayList<Integer> shotIndexes = new ArrayList<Integer>();
@@ -257,111 +276,31 @@ public class ShotDetector {
         Mat lastTwoFrame = lastFrame.clone();
 
         while (cap.read(currentFrame)) {
-            
-            Mat currentGray = new Mat();
-            Imgproc.cvtColor(currentFrame, currentGray, Imgproc.COLOR_BGR2GRAY);
 
-            MatOfPoint featuredPoints = new MatOfPoint();
-            Imgproc.goodFeaturesToTrack(previousGray, featuredPoints, 500, 0.01, 10);
-
-
-            MatOfPoint2f previousPoints = new MatOfPoint2f(featuredPoints.toArray());
-            MatOfPoint2f currentPoints = new MatOfPoint2f();
-            MatOfByte status = new MatOfByte();
-            
-
-            Video.calcOpticalFlowPyrLK(previousGray, currentGray, previousPoints, currentPoints, status, new MatOfFloat(), windowSize, 3, termCriteria, 0, 0.001);
-            
-            List<Point> previousPointsList = previousPoints.toList();
-            List<Point> currentPointsList = currentPoints.toList();
-            List<Byte> statusList = status.toList();
-
-            double sumFlow = 0.0;
-            
-            int successSize = 0;
-
-            for (int i = 0; i < statusList.size(); i++) {
-                if (statusList.get(i) == 1) {
-                    Point previousPoint = previousPointsList.get(i);
-                    Point currentPoint = currentPointsList.get(i);
-
-                    double flowX = Math.abs(previousPoint.x - currentPoint.x);
-                    double flowY = Math.abs(previousPoint.y - currentPoint.y);
-
-                    sumFlow += Math.sqrt(flowX*flowX + flowY*flowY);
-                    successSize += 1;
-                }
-            }
-
-            // Video.calcOpticalFlowFarneback(previousGray, currentGray, flow, 0.5, 3, 15, 3, 5, 1.2, 0);
-
-            // Scalar meanFlow = Core.mean(flow);
-            // double flowMagnitude = Math.sqrt(meanFlow.val[0] * meanFlow.val[0] + meanFlow.val[1] * meanFlow.val[1]);
-
-        
             double frameRate = cap.get(Videoio.CAP_PROP_FPS);
-
             long frameTimestamp = (long) (1000.0 * frameIndex / frameRate);
-
-
             SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss.SSS");
             dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
             String formattedTime = dateFormat.format(new Date(frameTimestamp));
 
-
             double threshold = 40.0;
-            if ((sumFlow / successSize > threshold || successSize < 5) && frameIndex - lastIndex > 15) {
-            // if (flowMagnitude > 10 && frameIndex - lastIndex > 15) {
-                System.out.println("Shot change detected! Frame: " + frameIndex + ". Current Time: " + formattedTime);
+            if (!isSameShot(previousFrame, currentFrame, threshold) && frameIndex - lastIndex > 15) {
+                // System.out.println("Shot change detected! Frame: " + frameIndex + ". Current Time: " + formattedTime);
                 shotIndexes.add(frameIndex);
                 lastIndex = frameIndex;
                 
+                double result1 = getHistResult(lastFrame, currentFrame);
+                double result2 = getHistResult(lastTwoFrame, currentFrame);
+                double result3 = getHistResult(previousFrame, currentFrame);
 
-                // if (!isSameScene(lastFrame, currentFrame, 100) && !isSameScene(lastTwoFrame, currentFrame, 100)) {
-                //     System.out.println("Scene changed!");
-                // }
-
-                Mat hsvLastFrame = new Mat();
-                Mat hsvCurrentFrame = new Mat();
-                Mat hsvLastTwoFrame = new Mat();
-                Mat hsvPreviousFrame = new Mat();
-                Imgproc.cvtColor(lastFrame, hsvLastFrame, Imgproc.COLOR_BGR2HSV);
-                Imgproc.cvtColor(currentFrame, hsvCurrentFrame, Imgproc.COLOR_BGR2HSV);
-                Imgproc.cvtColor(lastTwoFrame, hsvLastTwoFrame, Imgproc.COLOR_BGR2HSV);
-                Imgproc.cvtColor(previousFrame, hsvPreviousFrame, Imgproc.COLOR_BGR2HSV);
-
-                MatOfInt histSize = new MatOfInt(50, 60);
-                float[] hRanges = { 0, 180 };
-                float[] sRanges = { 0, 256 };
-                MatOfFloat histRanges = new MatOfFloat(0f, 180f, 0f, 256f);
-                Mat mask = new Mat();
-
-                MatOfInt channels = new MatOfInt(0, 1);
-                Mat hist1 = new Mat();
-                Mat hist2 = new Mat();
-                Mat hist3 = new Mat();
-                Mat hist4 = new Mat();
-                Imgproc.calcHist(Arrays.asList(hsvLastFrame), channels, mask, hist1, histSize, histRanges, false);
-                Imgproc.calcHist(Arrays.asList(hsvCurrentFrame), channels, mask, hist2, histSize, histRanges, false);
-                Imgproc.calcHist(Arrays.asList(hsvLastTwoFrame), channels, mask, hist3, histSize, histRanges, false);
-                Imgproc.calcHist(Arrays.asList(hsvPreviousFrame), channels, mask, hist4, histSize, histRanges, false);
-
-                Core.normalize(hist1, hist1, 0, 1, Core.NORM_MINMAX);
-                Core.normalize(hist2, hist2, 0, 1, Core.NORM_MINMAX);
-                Core.normalize(hist3, hist3, 0, 1, Core.NORM_MINMAX);
-                Core.normalize(hist4, hist4, 0, 1, Core.NORM_MINMAX);
-
-                double result1 = Imgproc.compareHist(hist1, hist2, Imgproc.CV_COMP_CHISQR);
-                double result2 = Imgproc.compareHist(hist2, hist3, Imgproc.CV_COMP_CHISQR);
-                double result3 = Imgproc.compareHist(hist2, hist4, Imgproc.CV_COMP_CHISQR);
                 
-                System.out.println("Chi-square distance between the two histograms: " + result1 + ". Result2: " + result2);
+                // System.out.println("Chi-square distance between the two histograms: " + result1 + ". Result2: " + result2);
 
                 Shot shot = new Shot(formattedTime, frameIndex);
                 if (result1 > 10 && result2 > 10 && result3 > 10 && result1+ result2 +result3 > 300) {
                     // System.out.println("Scene changed! Result1:" + result1 + ". Result2:" + result2);
                     lastTwoFrame = lastFrame.clone();
-                    Scene scene = new Scene();
+                    Scene scene = new Scene(formattedTime, frameIndex);
                     scene.addShot(shot);
                     sceneList.add(scene);
                 } else {
@@ -373,7 +312,6 @@ public class ShotDetector {
             }
 
             previousFrame = currentFrame.clone();
-            previousGray = currentGray.clone();
             frameIndex++;
         }
 
@@ -386,13 +324,8 @@ public class ShotDetector {
             e.printStackTrace();
         }
 
-
         cap.release();
 
     }
 
-    // public static void main(String[] args){
-    //     ShotDetector shotDetector = new ShotDetector();
-    //     shotDetector.SceneDetect();
-    // }
 }
