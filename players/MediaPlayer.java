@@ -30,6 +30,7 @@ public class MediaPlayer {
     this.videoFilePath = videoFilePath;
     this.audioFilePath = audioFilePath;
     this.pauseSignal = new AtomicBoolean(false);
+    this.stopSignal = new AtomicBoolean(false);
 
     syncSignal = new Object();
 
