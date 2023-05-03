@@ -113,6 +113,11 @@ public class PlayWaveFile {
 		// audioThread.start();
 		// player.play();
 
+		ShotDetector shotDetector = new ShotDetector();
+		shotDetector.SceneDetect();
+		String json = shotDetector.getJson();
+		System.out.println(json);
+
 		PlayWaveFile waveFile = new PlayWaveFile();
 		waveFile.MediaPlay(filename);
 
