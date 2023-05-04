@@ -1,7 +1,7 @@
 package players;
 
-// import com.fasterxml.jackson.core.JsonProcessingException;
-// import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.wikijava.sound.playWave.PlayVideo;
 import org.wikijava.sound.playWave.PlayWaveException;
 import org.wikijava.sound.playWave.ShotDetector;
@@ -32,11 +32,13 @@ public class MediaPlayerMain {
 
   private static int shotPosition = 100;
 
-  private static JScrollPane jScrollPane;
+  private JScrollPane jScrollPane;
 
-  private static JPanel content;
+  private JPanel content;
 
-  public void MediaPlay(String mp4file, String rgbfile, String wavfile) throws InterruptedException, IOException, PlayWaveException, LineUnavailableException {
+  private List<Integer> shotIndexes;
+
+  public void MediaPlay(String mp4file, String rgbfile, String wavfile) throws JsonProcessingException, InterruptedException, IOException, PlayWaveException, LineUnavailableException {
     // if (args.length < 3) {
     //     System.err.println("Input must have .mp4 .rgb .wav files");
     //     return;
@@ -50,13 +52,15 @@ public class MediaPlayerMain {
 
     jFrame  = new JFrame();
     videoOutLabel = new JLabel();
-    // ObjectMapper objectMapper = new ObjectMapper();
-    // File file = new File("players/example.json");
+    ObjectMapper objectMapper = new ObjectMapper();
+    File file = new File("example.json");
     // Scene[] scenes = objectMapper.readValue(file, Scene[].class);
 
     ShotDetector shotDetector = new ShotDetector(mp4FilePath);
     shotDetector.SceneDetect();
     String json = shotDetector.getJson();
+
+    shotIndexes = shotDetector.getShots();
 
     List<Scene> scenes = shotDetector.getScenes();
 
@@ -72,15 +76,15 @@ public class MediaPlayerMain {
     // Set left panel.
     for(int i = 0; i < scenes.size(); i++) {
       Scene scene = scenes.get(i);
-      setShotPanelLabel(new JButton(), "Scene " + i, parseTime(scene.getStartTime()), false, false);
+      setShotPanelLabel(new JButton(), "Scene " + i, parseTime(scene.getStartTime()), false, false, scene.getFrameId());
       List<Shot> shots = scene.getShots();
       for (int j = 0; j < shots.size(); j++) {
         Shot shot = shots.get(j);
-        setShotPanelLabel(new JButton(), "Shot " + j, parseTime(shot.getStartTime()), true, false);
+        setShotPanelLabel(new JButton(), "Shot " + j, parseTime(shot.getStartTime()), true, false, shot.getFrameId());
         List<Subshot> subShots = shot.getSubshots();
         for (int k = 0; k < subShots.size(); k++) {
           Subshot subshot = subShots.get(k);
-          setShotPanelLabel(new JButton(), "Subshot " + k, parseTime(shot.getStartTime()), false, true);
+          setShotPanelLabel(new JButton(), "Subshot " + k, parseTime(subshot.getStartTime()), false, true, subshot.getFrameId());
         }
       }
     }
@@ -125,11 +129,11 @@ public class MediaPlayerMain {
     jFrame.add(pauseButton);
     jFrame.add(stopButton);
 
-    mediaPlayer = new MediaPlayer(videoFilePath, soundFilePath, jFrame, videoOutLabel);
+    mediaPlayer = new MediaPlayer(videoFilePath, soundFilePath, jFrame, videoOutLabel, content, shotIndexes);
     mediaPlayer.play();
   }
 
-  public static void main(String[] args) throws InterruptedException, IOException, PlayWaveException, LineUnavailableException {
+  public static void main(String[] args) throws JsonProcessingException, InterruptedException, IOException, PlayWaveException, LineUnavailableException {
       if (args.length < 3) {
           System.err.println("Input must have .mp4 .rgb .wav files");
           return;
@@ -161,7 +165,7 @@ public class MediaPlayerMain {
       if (isPaused){
         mediaPlayer.resume();
       } else {
-        mediaPlayer = new MediaPlayer(videoFilePath, soundFilePath, jFrame, videoOutLabel);
+        mediaPlayer = new MediaPlayer(videoFilePath, soundFilePath, jFrame, videoOutLabel, content, shotIndexes);
         mediaPlayer.play();
       }
       isPaused = false;
@@ -184,14 +188,15 @@ public class MediaPlayerMain {
     jFrame.repaint();
   }
 
-  private static void setShotPanelLabel(JButton button, String shotName, double shotTime, boolean isShot, boolean isScene) {
+  private void setShotPanelLabel(JButton button, String shotName, double shotTime, boolean isShot, boolean isScene, int frameIndex) {
     button.setText(shotName);
+    button.setName(frameIndex + "");
 
     button.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent evt) {
         button.setForeground(Color.BLUE);
         try {
-          mediaPlayer.seek(shotTime);
+          mediaPlayer.seek(shotTime, frameIndex);
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         } catch (IOException e) {

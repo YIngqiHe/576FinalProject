@@ -11,6 +11,8 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PlayVideo {
     private String rgbFileName;
@@ -28,13 +30,17 @@ public class PlayVideo {
     private int startingFrameID = 0;
     private long startingOffset = 0;
 
+    private List<Integer> shotIndexes = new ArrayList<Integer>();
+
     public BufferedImage image;
-    public PlayVideo(Object syncSignal, AtomicBoolean pauseSignal, AtomicBoolean stopSignal, String rgbFileName, JFrame parentFrame, JLabel videoOutLabel) throws FileNotFoundException {
+    public PlayVideo(Object syncSignal, AtomicBoolean pauseSignal, AtomicBoolean stopSignal, String rgbFileName, JFrame parentFrame, JLabel videoOutLabel, List<Integer> shotIndexes)  throws FileNotFoundException {
         this.rgbFileName = rgbFileName;
         this.syncSignal = syncSignal;
         this.pauseSignal = pauseSignal;
         this.stopSignal = stopSignal;
         this.videoOutLabel = videoOutLabel;
+
+        this.shotIndexes = shotIndexes;
 
         // create the JFrame and JLabel to display the video
         frame = parentFrame;
@@ -44,22 +50,22 @@ public class PlayVideo {
         videoOutLabel.setPreferredSize(new Dimension(width, height));
         videoOutLabel.setBounds(width,0, width - 10, height - 10);
         frame.add(videoOutLabel);
-        seek(0);
+        seek(0, 0);
     }
 
     public JFrame getVideoDisplayFrame() {
         return frame;
     }
 
-    public void seek(double momentSeconds) throws FileNotFoundException {
+    public void seek(double momentSeconds, int frameIndex) throws FileNotFoundException {
         File file = new File(rgbFileName); // name of the RGB video file
         raf = new RandomAccessFile(file, "r");
         int bytesPerFrame = width * height * 3;
-        startingFrameID = (int) (momentSeconds * fps);
+        startingFrameID = frameIndex;
         startingOffset = (long) bytesPerFrame * startingFrameID;
     }
 
-    public void play() {
+    public void play(JPanel panel) {
         // read the video file and display each frame
         if (stopSignal.get()) {
             return;
@@ -70,6 +76,14 @@ public class PlayVideo {
             FileChannel channel = raf.getChannel();
             ByteBuffer buffer = ByteBuffer.allocate(width * height * 3);
 
+            Component[] components = panel.getComponents();
+            
+
+            // int buttonSize = components.length;
+            // int buttonId = 0;
+
+            int shotIndex = shotIndexes.indexOf(startingFrameID);
+
             for (int i = startingFrameID; i < numFrames; i++) {
                 while (pauseSignal.get()) {
                     // busy wait if pauseSignal set to true
@@ -77,6 +91,30 @@ public class PlayVideo {
                         break;
                     }
                 }
+
+                if (shotIndex < shotIndexes.size() && i == shotIndexes.get(shotIndex)) {
+
+                    String buttonName = "" + i;
+                    for (Component component : panel.getComponents()) {
+                        if (component instanceof JButton) {
+                            JButton button = (JButton) component;
+
+                            if (buttonName.equals(button.getName())) {
+                                button.setBackground(Color.RED);
+                                button.repaint();
+                            } else {
+                                button.setBackground(Color.WHITE);
+                                button.repaint();
+                            }
+
+                        }
+                    }
+
+                    shotIndex ++;
+
+                }
+                
+            
                 if (stopSignal.get()) {
                     break;
                 }
@@ -94,8 +132,8 @@ public class PlayVideo {
                     }
                 }
                 videoOutLabel.setIcon(new ImageIcon(image));
-                frame.validate();
-                frame.repaint();
+                // frame.validate();
+                // frame.repaint();
                 try {
                     Thread.sleep(1000 / fps);
                     // Thread.sleep(30);

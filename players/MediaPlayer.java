@@ -6,6 +6,8 @@ import org.wikijava.sound.playWave.PlayWaveException;
 
 import javax.sound.sampled.LineUnavailableException;
 import javax.swing.*;
+
+import java.util.List;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,19 +31,22 @@ public class MediaPlayer {
   private AtomicBoolean stopSignal;
   private AtomicBoolean videoStartSignal;
 
-  public MediaPlayer(String videoFilePath, String audioFilePath, JFrame parentFrame, JLabel videoOutLabel) throws IOException, PlayWaveException, LineUnavailableException, InterruptedException {
+  private JPanel panel;
+
+  public MediaPlayer(String videoFilePath, String audioFilePath, JFrame parentFrame, JLabel videoOutLabel, JPanel panel, List<Integer> shotIndexes) throws IOException, PlayWaveException, LineUnavailableException, InterruptedException {
     this.videoFilePath = videoFilePath;
     this.audioFilePath = audioFilePath;
     this.pauseSignal = new AtomicBoolean(false);
     this.stopSignal = new AtomicBoolean(false);
     this.videoStartSignal = new AtomicBoolean(false);
+    this.panel = panel;
 
     syncSignal = new Object();
 
-    videoPlayer = new PlayVideo(videoStartSignal, pauseSignal, stopSignal, videoFilePath, parentFrame, videoOutLabel);
+    videoPlayer = new PlayVideo(videoStartSignal, pauseSignal, stopSignal, videoFilePath, parentFrame, videoOutLabel, shotIndexes);
     soundPlayer = new PlaySound(videoStartSignal, pauseSignal, stopSignal, audioFilePath);
 
-    videoThread = new PlayVideoThread(videoPlayer);
+    videoThread = new PlayVideoThread(videoPlayer, panel);
     soundThread = new PlaySoundThread(soundPlayer);
   }
 
@@ -50,16 +55,16 @@ public class MediaPlayer {
     soundThread.start();
   }
 
-  public void seek(double momentSeconds) throws InterruptedException, IOException, PlayWaveException, LineUnavailableException {
+  public void seek(double momentSeconds, int index) throws InterruptedException, IOException, PlayWaveException, LineUnavailableException {
     // stop the play before seek
     stop();
     soundPlayer.seek(momentSeconds);
-    videoPlayer.seek(momentSeconds);
+    videoPlayer.seek(momentSeconds, index);
 
     syncSignal = new Object();
     this.pauseSignal.set(false);
     this.stopSignal.set(false);
-    videoThread = new PlayVideoThread(videoPlayer);
+    videoThread = new PlayVideoThread(videoPlayer, panel);
     soundThread = new PlaySoundThread(soundPlayer);
     play();
   }

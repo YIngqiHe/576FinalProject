@@ -24,6 +24,8 @@ public class ShotDetector {
    private List<Scene> scenes;
    private String filePath;
 
+   private List<Integer> shots;
+
    public ShotDetector(String filePath) {
        informationJson = "";
        scenes = new ArrayList<Scene>();
@@ -36,6 +38,10 @@ public class ShotDetector {
 
     public List<Scene> getScenes() {
         return scenes;
+    }
+
+    public List<Integer> getShots() {
+        return shots;
     }
 
     public Mat getBackgroundMask(Mat frame1, Mat frame2) {
@@ -400,6 +406,7 @@ public class ShotDetector {
        }
 
        scenes = sceneList;
+       shots = shotIndexes;
 
        ObjectMapper objectMapper = new ObjectMapper();
        try {
