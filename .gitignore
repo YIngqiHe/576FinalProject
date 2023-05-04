@@ -1,4 +1,6 @@
-
+576FinalProject-players.iml
+out/
+.idea/
 *.class
 *.mp4
 *.wav
