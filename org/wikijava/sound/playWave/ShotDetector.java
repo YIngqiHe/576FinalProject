@@ -1,5 +1,7 @@
 package org.wikijava.sound.playWave;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +19,9 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.video.Video;
 import org.opencv.videoio.*;
 
+import shotclass.*;
+import static java.lang.System.*;
+
 public class ShotDetector {
 
     private String informationJson;
@@ -29,158 +34,198 @@ public class ShotDetector {
         return informationJson;
     }
 
-    public class Scene {
+    // public class Scene {
 
-        @JsonProperty("start_time")
-        private String startTime;
+    //     @JsonProperty("start_time")
+    //     private String startTime;
 
-        @JsonProperty("frame_id")
-        private int frameId;
+    //     @JsonProperty("frame_id")
+    //     private int frameId;
 
-        @JsonProperty("shots")
-        private List<Shot> shots;
+    //     @JsonProperty("int_time")
+    //     private long intTime;
 
-        public Scene() {
-            this.startTime = "00:00:00.000"; 
-            this.frameId = 0;
-            this.shots = new ArrayList<>();
-        }
+    //     @JsonProperty("shots")
+    //     private List<Shot> shots;
 
-        public Scene(String startTime, int frameId) {
-            this.startTime = startTime; 
-            this.frameId = frameId;
-            this.shots = new ArrayList<>();
-        }
+    //     public Scene() {
+    //         this.startTime = "00:00:00.000"; 
+    //         this.frameId = 0;
+    //         this.intTime = 0;
+    //         this.shots = new ArrayList<>();
+    //     }
 
-        public void addShot(Shot shot) {
-            this.shots.add(shot);
-        }
+    //     public Scene(String startTime, int frameId, long intTime) {
+    //         this.startTime = startTime; 
+    //         this.frameId = frameId;
+    //         this.intTime = intTime;
+    //         this.shots = new ArrayList<>();
+    //     }
 
-        public void addSubshot(Subshot subshot) {
-            Shot shot = this.shots.get(shots.size() - 1);
-            String start_time = shot.getStartTime();
-            int frame_id = shot.getFrameId();
-            if (shot.subshots.size() == 0) {
-               Subshot firstSubshot = new Subshot(start_time, frame_id);
-               this.shots.get(shots.size() - 1).subshots.add(firstSubshot);
+    //     public void addShot(Shot shot) {
+    //         this.shots.add(shot);
+    //     }
+
+    //     public void addSubshot(Subshot subshot) {
+    //         Shot shot = this.shots.get(shots.size() - 1);
+    //         String start_time = shot.getStartTime();
+    //         int frame_id = shot.getFrameId();
+    //         long int_time = shot.getIntTime();
+    //         if (shot.subshots.size() == 0) {
+    //            Subshot firstSubshot = new Subshot(start_time, frame_id, int_time);
+    //            this.shots.get(shots.size() - 1).subshots.add(firstSubshot);
                
-            }
-            this.shots.get(shots.size() - 1).subshots.add(subshot);
-        }
+    //         }
+    //         this.shots.get(shots.size() - 1).subshots.add(subshot);
+    //     }
 
-        public String getStartTime() {
-            return startTime;
-        }
+    //     public String getStartTime() {
+    //         return startTime;
+    //     }
     
-        public void setStartTime(String startTime) {
-            this.startTime = startTime;
-        }
+    //     public void setStartTime(String startTime) {
+    //         this.startTime = startTime;
+    //     }
     
-        public int getFrameId() {
-            return frameId;
-        }
+    //     public int getFrameId() {
+    //         return frameId;
+    //     }
     
-        public void setFrameId(int frameId) {
-            this.frameId = frameId;
-        }
+    //     public void setFrameId(int frameId) {
+    //         this.frameId = frameId;
+    //     }
+
+    //     public long getIntTime() {
+    //         return intTime;
+    //     }
     
-        public List<Shot> getShots() {
-            return shots;
-        }
+    //     public void setIntTime(long intTime) {
+    //         this.intTime = intTime;
+    //     }
     
-        public void setShots(List<Shot> shots) {
-            this.shots = shots;
-        }
-
-    }
-
-    public class Shot {
-        @JsonProperty("start_time")
-        private String startTime;
-
-        @JsonProperty("frame_id")
-        private int frameId;
-
-        @JsonProperty("subshots")
-        private List<Subshot> subshots;
-
-        public Shot() {
-            this.startTime = "00:00:00.000"; 
-            this.frameId = 0;
-            this.subshots = new ArrayList<>();
-        }
-
-        public Shot(String startTime, int frameId) {
-            this.startTime = startTime; 
-            this.frameId = frameId;
-            this.subshots = new ArrayList<>();
-        }
-
-        public void addSubshot(Subshot subshot) {
-            this.subshots.add(subshot);
-        }
-
-        public String getStartTime() {
-            return startTime;
-        }
+    //     public List<Shot> getShots() {
+    //         return shots;
+    //     }
     
-        public void setStartTime(String startTime) {
-            this.startTime = startTime;
-        }
-    
-        public int getFrameId() {
-            return frameId;
-        }
-    
-        public void setFrameId(int frameId) {
-            this.frameId = frameId;
-        }
-    
-        public List<Subshot> getSubshots() {
-            return subshots;
-        }
-    
-        public void setSubshots(List<Subshot> subshots) {
-            this.subshots = subshots;
-        }
+    //     public void setShots(List<Shot> shots) {
+    //         this.shots = shots;
+    //     }
 
-    }
+    // }
 
-    public class Subshot {
+    // public class Shot {
+    //     @JsonProperty("start_time")
+    //     private String startTime;
+
+    //     @JsonProperty("frame_id")
+    //     private int frameId;
+
+    //     @JsonProperty("int_time")
+    //     private long intTime;
+
+    //     @JsonProperty("subshots")
+    //     private List<Subshot> subshots;
+
+    //     public Shot() {
+    //         this.startTime = "00:00:00.000"; 
+    //         this.frameId = 0;
+    //         this.intTime = 0;
+    //         this.subshots = new ArrayList<>();
+    //     }
+
+    //     public Shot(String startTime, int frameId, long intTime) {
+    //         this.startTime = startTime; 
+    //         this.frameId = frameId;
+    //         this.intTime = intTime;
+    //         this.subshots = new ArrayList<>();
+    //     }
+
+    //     public void addSubshot(Subshot subshot) {
+    //         this.subshots.add(subshot);
+    //     }
+
+    //     public String getStartTime() {
+    //         return startTime;
+    //     }
+    
+    //     public void setStartTime(String startTime) {
+    //         this.startTime = startTime;
+    //     }
+    
+    //     public int getFrameId() {
+    //         return frameId;
+    //     }
+    
+    //     public void setFrameId(int frameId) {
+    //         this.frameId = frameId;
+    //     }
+
+    //     public long getIntTime() {
+    //         return intTime;
+    //     }
+    
+    //     public void setIntTime(long intTime) {
+    //         this.intTime = intTime;
+    //     }
+    
+    //     public List<Subshot> getSubshots() {
+    //         return subshots;
+    //     }
+    
+    //     public void setSubshots(List<Subshot> subshots) {
+    //         this.subshots = subshots;
+    //     }
+
+    // }
+
+    // public class Subshot {
         
-        @JsonProperty("start_time")
-        private String startTime;
+    //     @JsonProperty("start_time")
+    //     private String startTime;
 
-        @JsonProperty("frame_id")
-        private int frameId;
+    //     @JsonProperty("frame_id")
+    //     private int frameId;
 
-        public Subshot() {
-            this.startTime = "00:00:00.000"; 
-            this.frameId = 0;
-        }
+    //     @JsonProperty("int_time")
+    //     private long intTime;
 
-        public Subshot(String startTime, int frameId) {
-            this.startTime = startTime; 
-            this.frameId = frameId;
-        }
+    //     public Subshot() {
+    //         this.startTime = "00:00:00.000"; 
+    //         this.frameId = 0;
+    //         this.intTime = 0;
+    //     }
 
-        public String getStartTime() {
-            return startTime;
-        }
+    //     public Subshot(String startTime, int frameId, long intTime) {
+    //         this.startTime = startTime; 
+    //         this.frameId = frameId;
+    //         this.intTime = intTime;
+    //     }
+
+    //     public String getStartTime() {
+    //         return startTime;
+    //     }
     
-        public void setStartTime(String startTime) {
-            this.startTime = startTime;
-        }
+    //     public void setStartTime(String startTime) {
+    //         this.startTime = startTime;
+    //     }
     
-        public int getFrameId() {
-            return frameId;
-        }
+    //     public int getFrameId() {
+    //         return frameId;
+    //     }
     
-        public void setFrameId(int frameId) {
-            this.frameId = frameId;
-        }
+    //     public void setFrameId(int frameId) {
+    //         this.frameId = frameId;
+    //     }
 
-    }
+    //     public long getIntTime() {
+    //         return intTime;
+    //     }
+    
+    //     public void setIntTime(long intTime) {
+    //         this.intTime = intTime;
+    //     }
+
+    // }
 
     
     public Mat getBackgroundMask(Mat frame1, Mat frame2) {
@@ -239,6 +284,50 @@ public class ShotDetector {
         return result;
     }
 
+    public double getWeightedHistResult(Mat frame1, Mat frame2) {
+
+        Mat frame1HSV = new Mat();
+        Mat frame2HSV = new Mat();
+
+        Imgproc.cvtColor(frame1, frame1HSV, Imgproc.COLOR_BGR2HSV);
+        Imgproc.cvtColor(frame2, frame2HSV, Imgproc.COLOR_BGR2HSV);
+
+        List<Mat> hsv_planes1 = new ArrayList<>();
+        List<Mat> hsv_planes2 = new ArrayList<>();
+
+        Core.split(frame1HSV, hsv_planes1);
+        Core.split(frame2HSV, hsv_planes2);
+
+        int histSize = 256;
+        float[] range = {0, 256};
+        MatOfFloat histRange = new MatOfFloat(range);
+
+        Mat hist1 = new Mat();
+        Mat hist2 = new Mat();
+
+        // Weighted difference calculation
+        double hueWeight = 2.0;
+        double saturationWeight = 1.0;
+        double valueWeight = 2.0;
+
+        double totalDifference = 0.0;
+
+        for (int i = 0; i < 3; i++) {
+            Imgproc.calcHist(hsv_planes1.subList(i, i + 1), new MatOfInt(0), new Mat(), hist1, new MatOfInt(histSize), histRange);
+            Imgproc.calcHist(hsv_planes2.subList(i, i + 1), new MatOfInt(0), new Mat(), hist2, new MatOfInt(histSize), histRange);
+
+            double weight = i == 0 ? hueWeight : (i == 1 ? saturationWeight : valueWeight);
+            double comparisonResult = Imgproc.compareHist(hist1, hist2, Imgproc.CV_COMP_CORREL) * weight;
+            totalDifference += comparisonResult;
+        }
+
+        totalDifference /= (hueWeight + saturationWeight + valueWeight);
+
+//        out.println(totalDifference);
+
+        return totalDifference;
+    }
+
     public boolean isSameShotHSV(Mat frame1, Mat frame2, double threshold) {
         if (frame1.size().equals(frame2.size()) && frame1.type() == frame2.type()) {
             Mat frame1HSV = new Mat();
@@ -251,7 +340,6 @@ public class ShotDetector {
 
             Scalar meanDifference = Core.mean(diff);
             double meanDiffValue = (meanDifference.val[0] + meanDifference.val[1] + meanDifference.val[2]) / 3;
-
             return meanDiffValue <= threshold;
         } else {
             return false;
@@ -309,7 +397,7 @@ public class ShotDetector {
         Imgproc.cvtColor(frame2, currentGray, Imgproc.COLOR_BGR2GRAY);
 
         MatOfPoint featuredPoints = new MatOfPoint();
-        Imgproc.goodFeaturesToTrack(previousGray, featuredPoints, 500, 0.01, 10);
+        Imgproc.goodFeaturesToTrack(previousGray, featuredPoints, 500, 0.001, 10, new Mat(), 3, true);
 
         MatOfPoint2f previousPoints = new MatOfPoint2f(featuredPoints.toArray());
         MatOfPoint2f currentPoints = new MatOfPoint2f();
@@ -317,8 +405,12 @@ public class ShotDetector {
         
         Size windowSize = new Size(15, 15);
         TermCriteria termCriteria = new TermCriteria(TermCriteria.MAX_ITER + TermCriteria.EPS, 20, 0.03);
-        Video.calcOpticalFlowPyrLK(previousGray, currentGray, previousPoints, currentPoints, status, new MatOfFloat(), windowSize, 3, termCriteria, 0, 0.001);
-        
+        try {
+            Video.calcOpticalFlowPyrLK(previousGray, currentGray, previousPoints, currentPoints, status, new MatOfFloat(), windowSize, 3, termCriteria, 0, 0.001);
+        }catch(Exception e){
+            return isSameShotDenseOptical( frame1, frame2, 20);
+        }
+
         List<Point> previousPointsList = previousPoints.toList();
         List<Point> currentPointsList = currentPoints.toList();
         List<Byte> statusList = status.toList();
@@ -348,6 +440,24 @@ public class ShotDetector {
 
     }
 
+    public boolean isSameShotRGB(Mat frame1, Mat frame2, double threshold) {
+        if (frame1.size().equals(frame2.size())) {
+            Mat diff = new Mat();
+            Core.absdiff(frame1, frame2, diff);
+            Scalar meanDifference = Core.mean(diff);
+
+            double sumMeanDifference = meanDifference.val[0] + meanDifference.val[1] + meanDifference.val[2];
+            if (sumMeanDifference <= threshold) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+    }
+
     public void SceneDetect() {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
@@ -360,7 +470,7 @@ public class ShotDetector {
 
         sceneList.add(scene0);
   
-        VideoCapture cap = new VideoCapture("InputVideo1.mp4");
+        VideoCapture cap = new VideoCapture("InputVideo.mp4");
         if (!cap.isOpened()) {
             System.out.println("Error opening video file.");
             return;
@@ -398,9 +508,6 @@ public class ShotDetector {
             dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
             String formattedTime = dateFormat.format(new Date(frameTimestamp));
 
-            double threshold = 40.0;
-
-
             // if (mask_status == 1) {
             //     lastFrame = lastTwoFrame.clone();
             //     lastTwoFrame = previousFrame.clone();
@@ -426,29 +533,45 @@ public class ShotDetector {
             //     }
 
             // }
+
+
+            double subShotThreshold = 40.0;
+
+            if (!isSameShot(previousFrame, currentFrame, subShotThreshold) && frameIndex - lastIndex > 12){
+                // subshots to be added
+            }
+
+            double shotThreshold = 40.0;
             
-            if (!isSameShot(previousFrame, currentFrame, threshold) && frameIndex - lastIndex > 15) {
+            if (!isSameShot(previousFrame, currentFrame, shotThreshold) && frameIndex - lastIndex > 50) {
                 System.out.println("Shot change detected! Frame: " + frameIndex + ". Current Time: " + formattedTime);
                 shotIndexes.add(frameIndex);
                
                 
-                double result1 = getHistResult(lastFrame, currentFrame, new Mat(), new Mat());
-                double result2 = getHistResult(lastTwoFrame, currentFrame, new Mat(), new Mat());
-                double result3 = getHistResult(previousFrame, currentFrame, new Mat(), new Mat());
+//                double result1 = getHistResult(lastFrame, currentFrame, new Mat(), new Mat());
+//                double result2 = getHistResult(lastTwoFrame, currentFrame, new Mat(), new Mat());
+//                double result3 = getHistResult(previousFrame, currentFrame, new Mat(), new Mat());
+
+                double result1 = getWeightedHistResult(lastFrame, currentFrame);
+                double result2 = getWeightedHistResult(lastTwoFrame, currentFrame);
+                double result3 = getWeightedHistResult(previousFrame, currentFrame);
 
                 
                 // System.out.println("Result1: " + result1 + ". Result2: " + result2 + ". Result3: " + result3);
 
-                Shot shot = new Shot(formattedTime, frameIndex);
-                if (result1 > 40 && result2 > 40 && result3 > 40) {
+                Shot shot = new Shot(formattedTime, frameIndex, frameTimestamp);
+
+                double sceneThreshold = 0.85;
+
+                if (result1 > sceneThreshold && result2 > sceneThreshold && result3 > sceneThreshold) {
                     System.out.println("Scene changed! Result1:" + result2 + ". Result2:" + result3);
                     lastTwoFrame = lastFrame.clone();
-                    Scene scene = new Scene(formattedTime, frameIndex);
+                    Scene scene = new Scene(formattedTime, frameIndex, frameTimestamp);
                     scene.addShot(shot);
                     sceneList.add(scene);
                 } else {
                     if (frameIndex - lastIndex <= 30) {
-                        Subshot subshot = new Subshot(formattedTime, frameIndex);
+                        Subshot subshot = new Subshot(formattedTime, frameIndex, frameTimestamp);
                         sceneList.get(sceneList.size() - 1).addSubshot(subshot);
                     } else {
                         sceneList.get(sceneList.size() - 1).addShot(shot);
@@ -476,13 +599,22 @@ public class ShotDetector {
             e.printStackTrace();
         }
 
+        try (FileWriter file = new FileWriter("example.json")) {
+            file.write(informationJson);
+           
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         cap.release();
 
     }
 
-    public void main(String[] arg){
-        ShotDetector shotDetector = new
-                shotDetector.SceneDetect();
+    public static void main(String[] arg){
+        out.println("hi");
+        out.println(getProperty("java.library.path"));
+        ShotDetector shotDetector = new ShotDetector();
+        shotDetector.SceneDetect();
     }
 
 }

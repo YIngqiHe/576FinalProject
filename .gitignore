@@ -1,7 +1,9 @@
-
+./idea
+./idea/*
 *.class
 *.mp4
 *.wav
 *.rgb
 lib/
 format.json
+examples.json
