@@ -21,19 +21,19 @@ public class PlayVideo {
     private JFrame frame;
     private JLabel videoOutLabel;
     private RandomAccessFile raf = null;
+    private Object syncSignal;
     private AtomicBoolean pauseSignal;
     private AtomicBoolean stopSignal;
-    private AtomicBoolean videoStartSignal;
 
     private int startingFrameID = 0;
     private long startingOffset = 0;
 
     public BufferedImage image;
-    public PlayVideo(AtomicBoolean videoStartSignal, AtomicBoolean pauseSignal, AtomicBoolean stopSignal, String rgbFileName, JFrame parentFrame, JLabel videoOutLabel) throws FileNotFoundException {
+    public PlayVideo(Object syncSignal, AtomicBoolean pauseSignal, AtomicBoolean stopSignal, String rgbFileName, JFrame parentFrame, JLabel videoOutLabel) throws FileNotFoundException {
         this.rgbFileName = rgbFileName;
+        this.syncSignal = syncSignal;
         this.pauseSignal = pauseSignal;
         this.stopSignal = stopSignal;
-        this.videoStartSignal = videoStartSignal;
         this.videoOutLabel = videoOutLabel;
 
         // create the JFrame and JLabel to display the video
@@ -60,10 +60,8 @@ public class PlayVideo {
     }
 
     public void play() {
-        System.out.println("Start playing video");
         // read the video file and display each frame
         if (stopSignal.get()) {
-            System.out.println("video stop signal is set, quit");
             return;
         }
         try {
@@ -73,9 +71,6 @@ public class PlayVideo {
             ByteBuffer buffer = ByteBuffer.allocate(width * height * 3);
 
             for (int i = startingFrameID; i < numFrames; i++) {
-                if (!videoStartSignal.get()) {
-                    videoStartSignal.set(true);
-                }
                 while (pauseSignal.get()) {
                     // busy wait if pauseSignal set to true
                     if (stopSignal.get()) {
@@ -83,13 +78,12 @@ public class PlayVideo {
                     }
                 }
                 if (stopSignal.get()) {
-                    System.out.println("video stop signal is set in loop, quit");
                     break;
                 }
                 buffer.clear();
                 channel.read(buffer);
                 buffer.rewind();
-                BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+                image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
                         int r = buffer.get() & 0xff;
@@ -108,11 +102,16 @@ public class PlayVideo {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                if (i == 2) {
+                    synchronized (syncSignal) {
+                        syncSignal.notify();
+                        System.out.println("Notify the video thread");
+                    }
+                }
             }
 
             channel.close();
             raf.close();
-            videoStartSignal.set(false);
         } catch (IOException e) {
             e.printStackTrace();
         }

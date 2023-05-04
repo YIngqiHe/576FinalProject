@@ -1,28 +1,32 @@
 package players;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.wikijava.sound.playWave.PlayVideo;
 import org.wikijava.sound.playWave.PlayWaveException;
+import org.wikijava.sound.playWave.ShotDetector;
+import shotclass.Scene;
+import shotclass.Shot;
+import shotclass.Subshot;
 
 import javax.sound.sampled.LineUnavailableException;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
-import java.io.FileNotFoundException;
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalTime;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 public class MediaPlayerMain {
-  private static String videoFilePath = "players/InputVideo.rgb";
-  private static String soundFilePath = "players/InputAudio.wav";
+  private String videoFilePath = "players/InputVideo.rgb";
+  private String soundFilePath = "players/InputAudio.wav";
+  private String mp4FilePath = "players/InputAudio.wav";
   private static JFrame jFrame;
   private static MediaPlayer mediaPlayer;
   private static boolean isPaused = false;
-
 
   private static JLabel videoOutLabel;
 
@@ -30,55 +34,60 @@ public class MediaPlayerMain {
 
   private static JScrollPane jScrollPane;
 
-  private static JPanel content ;
+  private static JPanel content;
 
+  public void MediaPlay(String mp4file, String rgbfile, String wavfile) throws JsonProcessingException, InterruptedException, IOException, PlayWaveException, LineUnavailableException {
+    // if (args.length < 3) {
+    //     System.err.println("Input must have .mp4 .rgb .wav files");
+    //     return;
+    // }
+    // String mp4name = args[0];
+    // String rgbfile = args[1];
+    // String wavfile = args[2];
+    mp4FilePath = mp4file;
+    soundFilePath = wavfile;
+    videoFilePath = rgbfile;
 
-  public static void main(String[] args) throws InterruptedException, IOException, PlayWaveException, LineUnavailableException {
     jFrame  = new JFrame();
     videoOutLabel = new JLabel();
+    // ObjectMapper objectMapper = new ObjectMapper();
+    // File file = new File("players/example.json");
+    // Scene[] scenes = objectMapper.readValue(file, Scene[].class);
 
-    String input1 = "00:01:37.433";
-    LocalTime localShotTime1 = LocalTime.parse(input1);
-    double shotTime1 = localShotTime1.toSecondOfDay();
+    ShotDetector shotDetector = new ShotDetector("InputVideo.mp4");
+    shotDetector.SceneDetect();
+    String json = shotDetector.getJson();
+
+    List<Scene> scenes = shotDetector.getScenes();
 
 
-    String input2 = "00:02:07.433";
-    LocalTime localShotTime2 = LocalTime.parse(input2);
-    double shotTime2 = localShotTime2.toSecondOfDay();
-
-    String input3 = "00:02:17.433";
-    LocalTime localShotTime3 = LocalTime.parse(input3);
-    double shotTime3 = localShotTime3.toSecondOfDay();
-
-    String input4 = "00:02:27.433";
-    LocalTime localShotTime4 = LocalTime.parse(input4);
-    double shotTime4 = localShotTime4.toSecondOfDay();
-
-    String input5 = "00:02:37.433";
-    LocalTime localShotTime5 = LocalTime.parse(input5);
-    double shotTime5 = localShotTime5.toSecondOfDay();
-
-    System.out.println("shotTime1 is: " + shotTime1);
-    System.out.println("shotTime2 is: " + shotTime2);
-
+//    System.out.println(scenes[0].getStartTime());
     jFrame.setLayout(null);
-
 
     content = new JPanel();
     jScrollPane = new JScrollPane(content);
-    BoxLayout layout =new BoxLayout(content, BoxLayout.Y_AXIS);
+    BoxLayout layout = new BoxLayout(content, BoxLayout.Y_AXIS);
     content.setLayout(layout);
 
-    for(int i = 0; i < 20; i++) {
-      setShotPanelLabel(new JButton(), "shot" + i, shotTime1);
-
+    // Set left panel.
+    for(int i = 0; i < scenes.size(); i++) {
+      Scene scene = scenes.get(i);
+      setShotPanelLabel(new JButton(), "Scene " + i, parseTime(scene.getStartTime()), false, false);
+      List<Shot> shots = scene.getShots();
+      for (int j = 0; j < shots.size(); j++) {
+        Shot shot = shots.get(j);
+        setShotPanelLabel(new JButton(), "Shot " + j, parseTime(shot.getStartTime()), true, false);
+        List<Subshot> subShots = shot.getSubshots();
+        for (int k = 0; k < subShots.size(); k++) {
+          Subshot subshot = subShots.get(k);
+          setShotPanelLabel(new JButton(), "Subshot " + k, parseTime(shot.getStartTime()), false, true);
+        }
+      }
     }
 
     jScrollPane.setBounds(0,0,PlayVideo.width / 2 + 50,PlayVideo.height + 200);
     jScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
     jFrame.add(jScrollPane);
-
-
 
     // Add button and click events.
     JButton pauseButton = new JButton();
@@ -107,7 +116,7 @@ public class MediaPlayerMain {
       }
     });
 
-    // Set buttons position, using null layout, we can change it toC ardLayout or Boxlayout
+    // Set buttons position, using null layout, we can change it to CardLayout or Boxlayout
     playButton.setBounds(PlayVideo.width, 270, 60, 20);
     pauseButton.setBounds(PlayVideo.width + 200, 270, 60, 20);
     stopButton.setBounds(PlayVideo.width + 400, 270, 60, 20);
@@ -118,6 +127,19 @@ public class MediaPlayerMain {
 
     mediaPlayer = new MediaPlayer(videoFilePath, soundFilePath, jFrame, videoOutLabel);
     mediaPlayer.play();
+  }
+
+  public static void main(String[] args) throws JsonProcessingException, InterruptedException, IOException, PlayWaveException, LineUnavailableException {
+      if (args.length < 3) {
+          System.err.println("Input must have .mp4 .rgb .wav files");
+          return;
+      }
+      String mp4file = args[0];
+      String rgbfile = args[1];
+      String wavfile = args[2];
+
+      MediaPlayerMain play = new MediaPlayerMain();
+      play.MediaPlay(mp4file, rgbfile, wavfile);
   }
 
   private static void stopButtonActionPerformed(ActionEvent evt) {//GEN-FIRST:event_stopButtonActionPerformed
@@ -134,7 +156,7 @@ public class MediaPlayerMain {
     mediaPlayer.pause();
   }//GEN-LAST:event_pauseButtonActionPerformed
 
-  private static void playButtonActionPerformed(ActionEvent evt) {//GEN-FIRST:event_playButtonActionPerformed
+  private void playButtonActionPerformed(ActionEvent evt) {//GEN-FIRST:event_playButtonActionPerformed
     try {
       if (isPaused){
         mediaPlayer.resume();
@@ -162,16 +184,39 @@ public class MediaPlayerMain {
     jFrame.repaint();
   }
 
-  private static void setShotPanelLabel(JButton button, String shotName, double shotTime) {
+  private static void setShotPanelLabel(JButton button, String shotName, double shotTime, boolean isShot, boolean isScene) {
     button.setText(shotName);
 
     button.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent evt) {
         button.setForeground(Color.BLUE);
+        try {
+          mediaPlayer.seek(shotTime);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        } catch (PlayWaveException e) {
+          throw new RuntimeException(e);
+        } catch (LineUnavailableException e) {
+          throw new RuntimeException(e);
+        }
       }
     });
+
+    if (isShot) {
+      button.setAlignmentX(Component.CENTER_ALIGNMENT);
+    } else if (isScene) {
+      button.setAlignmentX(Component.LEFT_ALIGNMENT);
+    } else {
+      button.setAlignmentX(Component.RIGHT_ALIGNMENT);
+    }
     content.add(button);
-    button.setBounds(20, shotPosition, 60, 20);
-    shotPosition += 100;
+  }
+
+  private static double parseTime(String input) {
+    LocalTime localShotTime5 = LocalTime.parse(input);
+    double shotTime = localShotTime5.toSecondOfDay();
+    return shotTime;
   }
 }
