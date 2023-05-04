@@ -8,6 +8,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -24,6 +26,13 @@ public class MediaPlayerMain {
 
   private static JLabel videoOutLabel;
 
+  private static int shotPosition = 100;
+
+  private static JScrollPane jScrollPane;
+
+  private static JPanel content ;
+
+
   public static void main(String[] args) throws InterruptedException, IOException, PlayWaveException, LineUnavailableException {
     jFrame  = new JFrame();
     videoOutLabel = new JLabel();
@@ -33,59 +42,43 @@ public class MediaPlayerMain {
     double shotTime1 = localShotTime1.toSecondOfDay();
 
 
-    String input2 = "00:02:37.433";
+    String input2 = "00:02:07.433";
     LocalTime localShotTime2 = LocalTime.parse(input2);
     double shotTime2 = localShotTime2.toSecondOfDay();
+
+    String input3 = "00:02:17.433";
+    LocalTime localShotTime3 = LocalTime.parse(input3);
+    double shotTime3 = localShotTime3.toSecondOfDay();
+
+    String input4 = "00:02:27.433";
+    LocalTime localShotTime4 = LocalTime.parse(input4);
+    double shotTime4 = localShotTime4.toSecondOfDay();
+
+    String input5 = "00:02:37.433";
+    LocalTime localShotTime5 = LocalTime.parse(input5);
+    double shotTime5 = localShotTime5.toSecondOfDay();
 
     System.out.println("shotTime1 is: " + shotTime1);
     System.out.println("shotTime2 is: " + shotTime2);
 
     jFrame.setLayout(null);
 
-    JButton shotButton1 = new JButton();
-    JButton shotButton2 = new JButton();
 
-    shotButton1.setText("shot1");
-    shotButton1.addActionListener(new java.awt.event.ActionListener() {
-      public void actionPerformed(java.awt.event.ActionEvent evt) {
+    content = new JPanel();
+    jScrollPane = new JScrollPane(content);
+    BoxLayout layout =new BoxLayout(content, BoxLayout.Y_AXIS);
+    content.setLayout(layout);
 
-        try {
-          mediaPlayer.seek(shotTime1);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        } catch (PlayWaveException e) {
-          throw new RuntimeException(e);
-        } catch (LineUnavailableException e) {
-          throw new RuntimeException(e);
-        }
-      }
-    });
+    for(int i = 0; i < 20; i++) {
+      setShotPanelLabel(new JButton(), "shot" + i, shotTime1);
 
-    shotButton2.setText("shot2");
-    shotButton2.addActionListener(new java.awt.event.ActionListener() {
-      public void actionPerformed(java.awt.event.ActionEvent evt) {
+    }
 
-        try {
-          mediaPlayer.seek(shotTime2);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        } catch (PlayWaveException e) {
-          throw new RuntimeException(e);
-        } catch (LineUnavailableException e) {
-          throw new RuntimeException(e);
-        }
-      }
-    });
+    jScrollPane.setBounds(0,0,PlayVideo.width / 2 + 50,PlayVideo.height + 200);
+    jScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+    jFrame.add(jScrollPane);
 
-    jFrame.add(shotButton1);
-    jFrame.add(shotButton2);
 
-    shotButton1.setBounds(20, 100, 60, 20);
-    shotButton2.setBounds(20, 200, 60, 20);
 
     // Add button and click events.
     JButton pauseButton = new JButton();
@@ -94,22 +87,22 @@ public class MediaPlayerMain {
 
     pauseButton.setText("Pause");
     pauseButton.setToolTipText("");
-    pauseButton.addActionListener(new java.awt.event.ActionListener() {
-      public void actionPerformed(java.awt.event.ActionEvent evt) {
+    pauseButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent evt) {
         pauseButtonActionPerformed(evt);
       }
     });
 
     stopButton.setText("Stop");
-    stopButton.addActionListener(new java.awt.event.ActionListener() {
-      public void actionPerformed(java.awt.event.ActionEvent evt) {
+    stopButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent evt) {
         stopButtonActionPerformed(evt);
       }
     });
 
     playButton.setText("Play");
-    playButton.addActionListener(new java.awt.event.ActionListener() {
-      public void actionPerformed(java.awt.event.ActionEvent evt) {
+    playButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent evt) {
         playButtonActionPerformed(evt);
       }
     });
@@ -127,7 +120,7 @@ public class MediaPlayerMain {
     mediaPlayer.play();
   }
 
-  private static void stopButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stopButtonActionPerformed
+  private static void stopButtonActionPerformed(ActionEvent evt) {//GEN-FIRST:event_stopButtonActionPerformed
     try {
       mediaPlayer.stop();
       setScreenToBlack();
@@ -136,12 +129,12 @@ public class MediaPlayerMain {
     }
   }//GEN-LAST:event_stopButtonActionPerformed
 
-  private static void pauseButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pauseButtonActionPerformed
+  private static void pauseButtonActionPerformed(ActionEvent evt) {//GEN-FIRST:event_pauseButtonActionPerformed
     isPaused = true;
     mediaPlayer.pause();
   }//GEN-LAST:event_pauseButtonActionPerformed
 
-  private static void playButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_playButtonActionPerformed
+  private static void playButtonActionPerformed(ActionEvent evt) {//GEN-FIRST:event_playButtonActionPerformed
     try {
       if (isPaused){
         mediaPlayer.resume();
@@ -167,5 +160,18 @@ public class MediaPlayerMain {
     videoOutLabel.setIcon(new ImageIcon(image));
     jFrame.validate();
     jFrame.repaint();
+  }
+
+  private static void setShotPanelLabel(JButton button, String shotName, double shotTime) {
+    button.setText(shotName);
+
+    button.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent evt) {
+        button.setForeground(Color.BLUE);
+      }
+    });
+    content.add(button);
+    button.setBounds(20, shotPosition, 60, 20);
+    shotPosition += 100;
   }
 }
