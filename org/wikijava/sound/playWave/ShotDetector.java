@@ -239,6 +239,69 @@ public class ShotDetector {
         return result;
     }
 
+    public boolean isSameShotHSV(Mat frame1, Mat frame2, double threshold) {
+        if (frame1.size().equals(frame2.size()) && frame1.type() == frame2.type()) {
+            Mat frame1HSV = new Mat();
+            Mat frame2HSV = new Mat();
+            Mat diff = new Mat();
+
+            Imgproc.cvtColor(frame1, frame1HSV, Imgproc.COLOR_BGR2HSV);
+            Imgproc.cvtColor(frame2, frame2HSV, Imgproc.COLOR_BGR2HSV);
+            Core.absdiff(frame1HSV, frame2HSV, diff);
+
+            Scalar meanDifference = Core.mean(diff);
+            double meanDiffValue = (meanDifference.val[0] + meanDifference.val[1] + meanDifference.val[2]) / 3;
+
+            return meanDiffValue <= threshold;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isSameShotDenseOptical(Mat frame1, Mat frame2, double threshold) {
+        if (frame1.size().equals(frame2.size()) && frame1.type() == frame2.type()) {
+            Mat frame1Gray = new Mat();
+            Mat frame2Gray = new Mat();
+            Imgproc.cvtColor(frame1, frame1Gray, Imgproc.COLOR_BGR2GRAY);
+            Imgproc.cvtColor(frame2, frame2Gray, Imgproc.COLOR_BGR2GRAY);
+
+            Mat flow = new Mat();
+            Video.calcOpticalFlowFarneback(
+                    frame1Gray, frame2Gray, flow, 0.5, 3, 15, 3, 5, 1.2, 0);
+
+            MatOfFloat flowMagnitude = new MatOfFloat();
+            MatOfFloat flowAngle = new MatOfFloat();
+            cartToPolar(flow, flowMagnitude, flowAngle);
+
+            double meanFlowMagnitude = Core.mean(flowMagnitude).val[0];
+
+            return meanFlowMagnitude <= threshold;
+        } else {
+            return false;
+        }
+    }
+
+    public static void cartToPolar(Mat flow, Mat magnitude, Mat angle) {
+        int width = flow.cols();
+        int height = flow.rows();
+        float[] data = new float[width * height * 2];
+        flow.get(0, 0, data);
+        float[] mag = new float[width * height];
+        float[] ang = new float[width * height];
+
+        for (int i = 0, j = 0; i < data.length; i += 2, j++) {
+            float x = data[i];
+            float y = data[i + 1];
+            mag[j] = (float) Math.sqrt(x * x + y * y);
+            ang[j] = (float) Math.atan2(y, x);
+        }
+
+        magnitude.create(height, width, CvType.CV_32F);
+        angle.create(height, width, CvType.CV_32F);
+        magnitude.put(0, 0, mag);
+        angle.put(0, 0, ang);
+    }
+
     public boolean isSameShot(Mat frame1, Mat frame2, double threshold) {
         Mat previousGray = new Mat();
         Imgproc.cvtColor(frame1, previousGray, Imgproc.COLOR_BGR2GRAY);
@@ -415,6 +478,11 @@ public class ShotDetector {
 
         cap.release();
 
+    }
+
+    public void main(String[] arg){
+        ShotDetector shotDetector = new
+                shotDetector.SceneDetect();
     }
 
 }

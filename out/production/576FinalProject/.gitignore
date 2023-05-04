@@ -1,0 +1,7 @@
+
+*.class
+*.mp4
+*.wav
+*.rgb
+lib/
+format.json

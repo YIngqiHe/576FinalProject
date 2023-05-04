@@ -54,7 +54,7 @@ public class PlayWaveFile {
     /**
      * <Replace this with one clearly defined responsibility this method does.>
      * 
-     * @param args
+     * @paramargs
      *            the name of the wave file to play
      */
     public void MediaPlay(String filename) {
