@@ -1,0 +1,8 @@
+*.class
+*.mp4
+*.wav
+*.rgb
+Ready_Player_One_rgb/
+out/
+*.iml
+.idea/
