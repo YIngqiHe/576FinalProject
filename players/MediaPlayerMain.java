@@ -1,7 +1,7 @@
 package players;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+// import com.fasterxml.jackson.core.JsonProcessingException;
+// import com.fasterxml.jackson.databind.ObjectMapper;
 import org.wikijava.sound.playWave.PlayVideo;
 import org.wikijava.sound.playWave.PlayWaveException;
 import org.wikijava.sound.playWave.ShotDetector;
@@ -36,7 +36,7 @@ public class MediaPlayerMain {
 
   private static JPanel content;
 
-  public void MediaPlay(String mp4file, String rgbfile, String wavfile) throws JsonProcessingException, InterruptedException, IOException, PlayWaveException, LineUnavailableException {
+  public void MediaPlay(String mp4file, String rgbfile, String wavfile) throws InterruptedException, IOException, PlayWaveException, LineUnavailableException {
     // if (args.length < 3) {
     //     System.err.println("Input must have .mp4 .rgb .wav files");
     //     return;
@@ -54,7 +54,7 @@ public class MediaPlayerMain {
     // File file = new File("players/example.json");
     // Scene[] scenes = objectMapper.readValue(file, Scene[].class);
 
-    ShotDetector shotDetector = new ShotDetector("InputVideo.mp4");
+    ShotDetector shotDetector = new ShotDetector(mp4FilePath);
     shotDetector.SceneDetect();
     String json = shotDetector.getJson();
 
@@ -129,7 +129,7 @@ public class MediaPlayerMain {
     mediaPlayer.play();
   }
 
-  public static void main(String[] args) throws JsonProcessingException, InterruptedException, IOException, PlayWaveException, LineUnavailableException {
+  public static void main(String[] args) throws InterruptedException, IOException, PlayWaveException, LineUnavailableException {
       if (args.length < 3) {
           System.err.println("Input must have .mp4 .rgb .wav files");
           return;
