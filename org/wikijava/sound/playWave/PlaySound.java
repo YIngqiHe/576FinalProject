@@ -36,27 +36,23 @@ public class PlaySound {
 
   private SourceDataLine dataLine = null;
 
-  private Object syncSignal;
-
   private AtomicBoolean pauseSignal;
   private AtomicBoolean stopSignal;
-
-  private boolean isStarted = false;
-  private boolean isStopped = false;
+  private AtomicBoolean videoStartSignal;
 
   /**
    * CONSTRUCTOR
    */
-  public PlaySound(Object syncSignal, AtomicBoolean pauseSignal, AtomicBoolean stopSignal, String audioFilePath) throws PlayWaveException, LineUnavailableException, IOException, InterruptedException {
+  public PlaySound(AtomicBoolean videoStartSignal, AtomicBoolean pauseSignal, AtomicBoolean stopSignal, String audioFilePath) throws LineUnavailableException, IOException, InterruptedException {
     this.audioFilePath = audioFilePath;
-    this.syncSignal = syncSignal;
     this.pauseSignal = pauseSignal;
     this.stopSignal = stopSignal;
+    this.videoStartSignal = videoStartSignal;
 
     seek(0);
   }
 
-  public void seek(double momentSeconds) throws PlayWaveException, LineUnavailableException, IOException, InterruptedException {
+  public void seek(double momentSeconds) throws LineUnavailableException, IOException, InterruptedException {
     try {
       this.waveStream = new FileInputStream(this.audioFilePath);
     } catch (FileNotFoundException e) {
@@ -71,9 +67,9 @@ public class PlaySound {
       InputStream bufferedIn = new BufferedInputStream(this.waveStream);
       audioInputStream = AudioSystem.getAudioInputStream(bufferedIn);
     } catch (UnsupportedAudioFileException e1) {
-      throw new PlayWaveException(e1);
+      throw new IOException(e1);
     } catch (IOException e1) {
-      throw new PlayWaveException(e1);
+      throw new IOException(e1);
     }
 
     // Obtain the information about the AudioInputStream
@@ -89,7 +85,16 @@ public class PlaySound {
     long bytePosition = (long) (momentSeconds * audioFormat.getFrameRate() * audioFormat.getFrameSize());
 
     // Skip the data until the desired position
-    audioInputStream.skip(bytePosition);
+//    audioInputStream.skip(bytePosition);
+    byte[] buffer = new byte[4096];
+    int bytesRead = 0;
+    int totalBytesRead = 0;
+    while (totalBytesRead < bytePosition && bytesRead != -1) {
+      bytesRead = audioInputStream.read(buffer, 0, (int) Math.min(buffer.length, bytePosition - totalBytesRead));
+      if (bytesRead != -1) {
+        totalBytesRead += bytesRead;
+      }
+    }
   }
 
   public void stop() {
@@ -100,42 +105,26 @@ public class PlaySound {
     }
   }
 
-  public void pause() {
-    System.out.println("Audio is paused");
-    dataLine.stop();
-  }
-
-  public void play() throws PlayWaveException {
+  public void play() throws IOException {
     // Starts the music :P
+    System.out.println("Start play sound");
     if (stopSignal.get()) {
       return;
     }
-    if (!isStarted) {
-      synchronized (syncSignal) {
-        try {
-          System.out.println("Wait for video");
-          syncSignal.wait();
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-      }
+
+    while (!videoStartSignal.get()) {
+      // busy wait for video start signal
     }
-
-    isStarted = true;
     dataLine.start();
-
-
     int readBytes = 0;
     byte[] audioBuffer = new byte[this.EXTERNAL_BUFFER_SIZE];
 
     try {
       while (readBytes != -1) {
+        readBytes = audioInputStream.read(audioBuffer, 0,
+            audioBuffer.length);
         while (pauseSignal.get()) {
           // busy wait if pauseSignal set to true
-          if (!isStopped) {
-            isStopped = true;
-            dataLine.stop();
-          }
           if (stopSignal.get()) {
             break;
           }
@@ -143,18 +132,12 @@ public class PlaySound {
         if (stopSignal.get()) {
           break;
         }
-        if (isStopped) {
-          isStopped = false;
-          dataLine.start();
-        }
-        readBytes = audioInputStream.read(audioBuffer, 0,
-            audioBuffer.length);
         if (readBytes >= 0) {
           dataLine.write(audioBuffer, 0, readBytes);
         }
       }
     } catch (IOException e1) {
-      throw new PlayWaveException(e1);
+      throw new IOException (e1);
     } finally {
       // plays what's left and and closes the audioChannel
       dataLine.drain();

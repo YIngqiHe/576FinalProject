@@ -36,7 +36,7 @@ public class MediaPlayerMain {
 
   private static JPanel content;
 
-  public void MediaPlay(String mp4file, String rgbfile, String wavfile) throws JsonProcessingException, InterruptedException, IOException, PlayWaveException, LineUnavailableException {
+  public void MediaPlay(String mp4file, String rgbfile, String wavfile) throws JsonProcessingException, InterruptedException, IOException, LineUnavailableException {
     // if (args.length < 3) {
     //     System.err.println("Input must have .mp4 .rgb .wav files");
     //     return;
@@ -129,7 +129,7 @@ public class MediaPlayerMain {
     mediaPlayer.play();
   }
 
-  public static void main(String[] args) throws JsonProcessingException, InterruptedException, IOException, PlayWaveException, LineUnavailableException {
+  public static void main(String[] args) throws JsonProcessingException, InterruptedException, IOException, LineUnavailableException {
       if (args.length < 3) {
           System.err.println("Input must have .mp4 .rgb .wav files");
           return;
@@ -165,7 +165,7 @@ public class MediaPlayerMain {
         mediaPlayer.play();
       }
       isPaused = false;
-    } catch (InterruptedException | IOException | PlayWaveException | LineUnavailableException e) {
+    } catch (InterruptedException | IOException | LineUnavailableException e) {
       throw new RuntimeException(e);
     }
   }

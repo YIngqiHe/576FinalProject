@@ -29,7 +29,7 @@ public class MediaPlayer {
   private AtomicBoolean stopSignal;
   private AtomicBoolean videoStartSignal;
 
-  public MediaPlayer(String videoFilePath, String audioFilePath, JFrame parentFrame, JLabel videoOutLabel) throws IOException, PlayWaveException, LineUnavailableException, InterruptedException {
+  public MediaPlayer(String videoFilePath, String audioFilePath, JFrame parentFrame, JLabel videoOutLabel) throws IOException, LineUnavailableException, InterruptedException {
     this.videoFilePath = videoFilePath;
     this.audioFilePath = audioFilePath;
     this.pauseSignal = new AtomicBoolean(false);
