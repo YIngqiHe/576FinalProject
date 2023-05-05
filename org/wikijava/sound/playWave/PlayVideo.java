@@ -61,8 +61,17 @@ public class PlayVideo {
         File file = new File(rgbFileName); // name of the RGB video file
         raf = new RandomAccessFile(file, "r");
         int bytesPerFrame = width * height * 3;
+        try{
+            numFrames = (int) (raf.length() / bytesPerFrame);
+        }catch(Exception e){
+
+        }
+
         startingFrameID = frameIndex;
-        startingOffset = (long) bytesPerFrame * startingFrameID;
+
+        int rgbIndex = (int) startingFrameID/24 * 30;
+
+        startingOffset = (long) bytesPerFrame * rgbIndex;
     }
 
     public void play(JPanel panel) {
@@ -81,6 +90,7 @@ public class PlayVideo {
 
             // int buttonSize = components.length;
             // int buttonId = 0;
+
 
             int shotIndex = shotIndexes.indexOf(startingFrameID);
 
